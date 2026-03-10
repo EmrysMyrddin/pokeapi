@@ -9,9 +9,9 @@ services:
   db:
     image: postgres:17.2-alpine3.21
     environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pokemon}
-      POSTGRES_USER: ${POSTGRES_USER:-ash}
-      POSTGRES_DB: ${POSTGRES_DB:-pokeapi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -23,12 +23,13 @@ services:
 
   app:
     user: ${RUN_AS:-pokeapi}
+    image: pokeapi/pokeapi:master
     environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pokemon}
-      POSTGRES_USER: ${POSTGRES_USER:-ash}
-      POSTGRES_DB: ${POSTGRES_DB:-pokeapi}
-    volumes:
-      - .:/code
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+    # volumes:
+      # - .:/code
     links:
       - db
       - cache
@@ -39,17 +40,6 @@ services:
         condition: service_started
     restart: always
 
-  web:
-    image: nginx:1.27.3-alpine3.20
-    ports:
-      - "80:80"
-      - "443:443"
-    restart: always
-    # command: [nginx-debug, '-g', 'daemon off;']
-    volumes:
-      - ./Resources/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./Resources/nginx/ssl:/ssl:ro
-      - graphql_cache:/tmp/cache
   graphql-engine:
     image: hasura/graphql-engine:v2.48.1
     ports:
@@ -59,7 +49,7 @@ services:
         condition: service_healthy
     restart: always
     environment:
-      HASURA_GRAPHQL_DATABASE_URL: postgres://${POSTGRES_USER:-ash}:${POSTGRES_PASSWORD:-pokemon}@db:5432/${POSTGRES_DB:-pokeapi}
+      HASURA_GRAPHQL_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
       HASURA_GRAPHQL_DEV_MODE: "false"
       HASURA_GRAPHQL_LOG_LEVEL: "warn"
@@ -68,6 +58,17 @@ services:
       HASURA_GRAPHQL_UNAUTHORIZED_ROLE: anon
       HASURA_GRAPHQL_ENABLE_TELEMETRY: "false"
       # HASURA_GRAPHQL_CONSOLE_ASSETS_DIR: /srv/console-assets
+    networks:
+      - default
+      - dokploy-network
+
+  graphiql:
+    image: emrysmyrooin/pokeapi-graphiql
+    expose:
+      - 80
+    depends_on:
+      - graphql-engine
+    restart: always
     networks:
       - default
       - dokploy-network
