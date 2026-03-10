@@ -68,8 +68,15 @@ services:
       HASURA_GRAPHQL_UNAUTHORIZED_ROLE: anon
       HASURA_GRAPHQL_ENABLE_TELEMETRY: "false"
       # HASURA_GRAPHQL_CONSOLE_ASSETS_DIR: /srv/console-assets
+    networks:
+      - default
+      - dokploy-network
 
 volumes:
   pg_data:
   redis_data:
   graphql_cache:
+
+networks:
+  dokploy-network:
+    external: true
